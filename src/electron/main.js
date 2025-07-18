@@ -29,6 +29,15 @@ function createWindow() {
     mainWindow.loadFile(path.join(__dirname, '../../build/index.html'));
   }
 
+  mainWindow.webContents.once('did-finish-load', () => {
+    // 창에 포커스 설정
+    mainWindow.focus();
+    // 약간의 지연 후 reset 이벤트 전송 (성경책 필드 포커스)
+    setTimeout(() => {
+      mainWindow.webContents.send('shortcut-reset');
+    }, 100);
+  });
+
   // 기본 메뉴를 완전히 교체하여 기본 단축키 동작 방지
   const menuTemplate = [
     {
