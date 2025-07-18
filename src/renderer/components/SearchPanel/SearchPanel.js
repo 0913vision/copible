@@ -74,7 +74,7 @@ const SearchPanel = ({
             
             <strong>복사</strong><br/>
             • verse 카드 focus 시 자동 복사<br/>
-            • 주소 카드: "성경책\n장:절" 형태<br/>
+            • 주소 카드: "성경책\r\n장:절" 형태<br/>
             • 일반 카드: "절번호 내용" 형태<br/><br/>
             
             <strong>전체 저장</strong><br/>

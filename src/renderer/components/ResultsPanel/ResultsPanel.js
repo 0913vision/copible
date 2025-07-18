@@ -9,10 +9,10 @@ const ResultsPanel = ({ verses, loading, error, focusedVerseIndex, onVerseCardCl
       const actualVerses = verses.slice(1); // 나머지는 실제 구절들
       
       // TXT 내용 생성
-      let content = addressCard.displayText + '\n\n'; // 주소 + 두 번의 줄바꿈
+      let content = addressCard.displayText + '\r\n\r\n'; // 주소 + 두 번의 줄바꿈
       
       actualVerses.forEach(verse => {
-        content += `${verse.id} ${verse.text}\n\n`; // 각 구절 + 두 번의 줄바꿈
+        content += `${verse.id} ${verse.text}\r\n\r\n`; // 각 구절 + 두 번의 줄바꿈
       });
       
       // 파일 다운로드 (파일명: parseBible.txt)

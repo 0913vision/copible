@@ -111,9 +111,9 @@ const App = () => {
     // 복사용 텍스트 (줄바꿈 포함)
     let copyText;
     if (startVerse === endVerse) {
-      copyText = `${book.korean}\n${chapter}:${startVerse}`;
+      copyText = `${book.korean}\r\n${chapter}:${startVerse}`;
     } else {
-      copyText = `${book.korean}\n${chapter}:${startVerse}~${endVerse}`;
+      copyText = `${book.korean}\r\n${chapter}:${startVerse}~${endVerse}`;
     }
     
     return {
