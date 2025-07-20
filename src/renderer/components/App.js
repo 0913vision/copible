@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import SearchPanel from './SearchPanel/SearchPanel.js';
 import ResultsPanel from './ResultsPanel/ResultsPanel.js';
-import { fetchBibleVerses, isValidChapter } from '../../data/bible-crawler.js';
+import { getVersesFromArray, isValidChapter } from '../../data/bible-crawler.js';
 import { getExactBook } from '../../data/bible-search.js';
 import './App.css';
 
@@ -17,13 +17,16 @@ const App = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   
+  // 크롤링된 장 데이터
+  const [chapterData, setChapterData] = useState(null);
+  
   // focus된 verse card 상태
   const [focusedVerseIndex, setFocusedVerseIndex] = useState(-1);
 
   // 검색 함수
   const handleSearch = async () => {
-    if (!bookName || !chapter) {
-      setError('성경책과 장을 입력해주세요.');
+    if (!bookName || !chapter || !startVerse) {
+      setError('성경책, 장, 시작절을 모두 입력해주세요.');
       return;
     }
 
@@ -45,7 +48,7 @@ const App = () => {
     setLoading(true);
     setError('');
     
-    const start = parseInt(startVerse) || 1;
+    const start = parseInt(startVerse);
     
     // 시작절만 입력되고 끝절이 비어있다면 끝절을 시작절과 동일하게 설정
     let end;
@@ -53,15 +56,26 @@ const App = () => {
       end = start;
       setEndVerse(startVerse); // UI에도 반영
     } else {
-      end = parseInt(endVerse) || start;
+      end = parseInt(endVerse);
     }
     
-    // 웹크롤링을 통한 성경 구절 가져오기
-    const verses = await fetchBibleVerses(book.id, chapterNum, start, end);
+    // 웹크롤링을 통한 성경 구절 가져오기 (크롤링된 데이터 사용)
+    let verses;
+    if (chapterData && chapterData.length > 0) {
+      // 이미 크롤링된 데이터가 있으면 필터링만
+      verses = getVersesFromArray(chapterData, start, end);
+    } else {
+      // 크롤링된 데이터가 없으면 에러 처리
+      setError('장 데이터를 불러오는 중입니다. 잠시 후 다시 시도해주세요.');
+      setLoading(false);
+      return;
+    }
     
     if (verses.length === 0) {
       setError('요청한 성경 구절을 찾을 수 없습니다. 장, 절 번호를 확인해주세요.');
       setFocusedVerseIndex(-1); // focus 초기화
+      setLoading(false);
+      return; // 검색 실패 시 포커스 해제하지 않음
     } else {
       // 주소 카드 생성
       const addressCard = createAddressCard(book, chapterNum, start, end);
@@ -70,19 +84,19 @@ const App = () => {
       const versesWithAddress = [addressCard, ...verses];
       setVerses(versesWithAddress);
       setFocusedVerseIndex(0); // 첫 번째(주소) card에 focus
+      
+      // 검색 성공 시에만 모든 input field와 button focus 해제
+      const inputs = document.querySelectorAll('#bookName, #chapter, #startVerse, #endVerse');
+      inputs.forEach(input => input.blur());
+      
+      // 검색 버튼 focus 해제
+      const searchButton = document.querySelector('.search-btn');
+      if (searchButton) {
+        searchButton.blur();
+      }
     }
     
     setLoading(false);
-    
-    // 검색 완료 후 모든 input field와 button focus 해제
-    const inputs = document.querySelectorAll('#bookName, #chapter, #startVerse, #endVerse');
-    inputs.forEach(input => input.blur());
-    
-    // 검색 버튼 focus 해제
-    const searchButton = document.querySelector('.search-btn');
-    if (searchButton) {
-      searchButton.blur();
-    }
   };
 
   // 리셋 함수
@@ -123,7 +137,7 @@ const App = () => {
       displayText: addressText
     };
   };
-  const copyVerseToClipboard = async (verse) => {
+  const copyVerseToClipboard = async (verse, versesLength) => {
     try {
       let textToCopy;
       if (verse.isAddress) {
@@ -131,7 +145,7 @@ const App = () => {
         textToCopy = verse.text;
       } else {
         // 일반 verse의 경우 기존 방식
-        textToCopy = `${verse.id} ${verse.text}`;
+        versesLength === 2 ? textToCopy = `${verse.text}` : textToCopy = `${verse.id} ${verse.text}`;
       }
       await navigator.clipboard.writeText(textToCopy);
     } catch (error) {
@@ -211,7 +225,7 @@ const App = () => {
         };
       } catch (error) {
         // Electron이 아닌 환경에서는 무시
-        console.log('Not in Electron environment');
+        console.error('Not in Electron environment');
       }
     }
   }, [bookName, chapter, startVerse, endVerse]); // 상태값들을 dependency에 추가
@@ -220,7 +234,7 @@ const App = () => {
   useEffect(() => {
     // focus된 verse가 있으면 자동 복사
     if (focusedVerseIndex >= 0 && verses[focusedVerseIndex]) {
-      copyVerseToClipboard(verses[focusedVerseIndex]);
+      copyVerseToClipboard(verses[focusedVerseIndex], verses.length);
     }
 
     // 키보드 이벤트 리스너
@@ -287,6 +301,7 @@ const App = () => {
           loading={loading}
           error={error}
           verses={verses}
+          onChapterDataChange={setChapterData}
         />
         
         <ResultsPanel

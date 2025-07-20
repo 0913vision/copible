@@ -11,9 +11,14 @@ const ResultsPanel = ({ verses, loading, error, focusedVerseIndex, onVerseCardCl
       // TXT 내용 생성
       let content = addressCard.displayText + '\r\n\r\n'; // 주소 + 두 번의 줄바꿈
       
-      actualVerses.forEach(verse => {
-        content += `${verse.id} ${verse.text}\r\n\r\n`; // 각 구절 + 두 번의 줄바꿈
-      });
+      if (actualVerses.length === 1) {
+        content += `${actualVerses[0].text}\r\n\r\n`; // 단일 구절은 줄바꿈 1번
+      }
+      else {
+        actualVerses.forEach(verse => {
+          content += `${verse.id} ${verse.text}\r\n\r\n`; // 각 구절 + 두 번의 줄바꿈
+        });
+      }
       
       // 파일 다운로드 (파일명: parseBible.txt)
       const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });

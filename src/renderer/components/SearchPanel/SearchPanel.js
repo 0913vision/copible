@@ -15,7 +15,8 @@ const SearchPanel = ({
   onInputFocus,
   loading,
   error,
-  verses
+  verses,
+  onChapterDataChange
 }) => {
   // 메시지 생성
   const getStatusMessage = () => {
@@ -26,7 +27,7 @@ const SearchPanel = ({
       return { type: 'error', text: error };
     }
     if (verses && verses.length > 0) {
-      return { type: 'success', text: `${verses.length}개의 구절을 찾았습니다.` };
+      return { type: 'success', text: `${verses.length-1}개의 구절을 찾았습니다.` };
     }
     return null;
   };
@@ -35,7 +36,7 @@ const SearchPanel = ({
 
   return (
     <div className="search-panel">
-      <h2>성경 구절 검색 도구</h2>
+      <h2>성경 구절 검색</h2>
       <BibleSearchForm
         bookName={bookName}
         setBookName={setBookName}
@@ -48,6 +49,7 @@ const SearchPanel = ({
         onSearch={onSearch}
         onReset={onReset}
         onInputFocus={onInputFocus}
+        onChapterDataChange={onChapterDataChange}
       />
       
       {/* 상태 메시지 창 */}

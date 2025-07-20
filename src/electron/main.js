@@ -1,12 +1,13 @@
 const { app, BrowserWindow, Menu, globalShortcut } = require('electron');
+const { autoUpdater } = require('electron-updater');
 const path = require('path');
 
 let mainWindow;
 
 function createWindow() {
   mainWindow = new BrowserWindow({
-    width: 1000,
-    height: 700,
+    width: 800,
+    height: 550,
     webPreferences: {
       nodeIntegration: true,
       contextIsolation: false,
@@ -14,8 +15,8 @@ function createWindow() {
       webSecurity: false  // 기본 단축키 오버라이드를 위해 추가
     },
     resizable: true,
-    minWidth: 800,
-    minHeight: 600
+    minWidth: 600,
+    minHeight: 300
   });
 
   // 개발/프로덕션 환경에 따른 URL 설정
@@ -117,6 +118,19 @@ function createWindow() {
 app.whenReady().then(() => {
   createWindow();
 
+  // 자동 업데이트 설정 (프로덕션에서만)
+  if (!process.env.NODE_ENV || process.env.NODE_ENV === 'production') {
+    // 앱 시작 5초 후 업데이트 체크
+    setTimeout(() => {
+      autoUpdater.checkForUpdatesAndNotify();
+    }, 5000);
+    
+    // 24시간마다 업데이트 체크
+    setInterval(() => {
+      autoUpdater.checkForUpdatesAndNotify();
+    }, 24 * 60 * 60 * 1000);
+  }
+
   // 전역 단축키 등록
   const quitAccelerator = process.platform === 'darwin' ? 'Command+Q' : 'Control+Q';
   globalShortcut.register(quitAccelerator, () => {
@@ -147,4 +161,33 @@ app.on('before-quit', () => {
 // 완전히 종료될 때
 app.on('will-quit', (event) => {
   globalShortcut.unregisterAll();
+});
+
+// 자동 업데이트 이벤트 핸들러
+autoUpdater.on('checking-for-update', () => {
+  console.log('업데이트 확인 중...');
+});
+
+autoUpdater.on('update-available', (info) => {
+  console.log('업데이트가 사용 가능합니다.');
+});
+
+autoUpdater.on('update-not-available', (info) => {
+  console.log('최신 버전입니다.');
+});
+
+autoUpdater.on('error', (err) => {
+  console.log('자동 업데이트 오류: ', err);
+});
+
+autoUpdater.on('download-progress', (progressObj) => {
+  let log_message = "다운로드 속도: " + progressObj.bytesPerSecond;
+  log_message = log_message + ' - 다운로드됨 ' + progressObj.percent + '%';
+  log_message = log_message + ' (' + progressObj.transferred + "/" + progressObj.total + ')';
+  console.log(log_message);
+});
+
+autoUpdater.on('update-downloaded', (info) => {
+  console.log('업데이트 다운로드 완료');
+  // 앱 재시작 시 자동으로 업데이트됩니다.
 });

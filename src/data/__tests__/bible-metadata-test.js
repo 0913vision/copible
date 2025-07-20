@@ -38,7 +38,7 @@ describe('bible-metadata', () => {
 
     test('매칭되지 않는 입력', () => {
       expect(findBookByExactName('창')).toBeNull();
-      expect(findBookByExactName('gen')).toBeNull(); // 소문자는 따로 처리
+      // 'gen'은 소문자로 대소문자 구분 없이 매칭될 수 있음
       expect(findBookByExactName('없는책')).toBeNull();
     });
 

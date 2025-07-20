@@ -10,7 +10,7 @@
 
 /* SearchPanel */
 .search-panel {
-  width: 400px;
+  width: 280px;
   padding: 20px;
   border-right: 1px solid #e0e0e0;
   background-color: #f8f9fa;
@@ -39,7 +39,7 @@
 /* 전체 저장 버튼 */
 .save-all-btn {
   padding: 8px 16px;
-  background-color: #28a745;
+  background-color: #007bff;
   color: white;
   border: none;
   border-radius: 4px;
@@ -50,12 +50,12 @@
 }
 
 .save-all-btn:hover {
-  background-color: #218838;
+  background-color: #0056b3;
 }
 
 .save-all-btn:focus {
   outline: none;
-  box-shadow: 0 0 0 2px rgba(40, 167, 69, 0.25);
+  box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.25);
 }
 
 /* 상태 메시지 창 */
@@ -96,10 +96,10 @@
 
 .help-btn {
   position: relative;
-  width: 24px;
-  height: 24px;
+  width: 30px;
+  height: 30px;
   border-radius: 50%;
-  border: 1px solid #ccc;
+  border: 1.5px solid #ccc;
   background-color: #f8f9fa;
   cursor: help;
   display: flex;
@@ -114,7 +114,7 @@
 }
 
 .help-icon {
-  font-size: 12px;
+  font-size: 16px;
   font-weight: bold;
   color: #6c757d;
 }
@@ -132,7 +132,7 @@
   color: white;
   padding: 12px;
   border-radius: 6px;
-  font-size: 11px;
+  font-size: 12px;
   line-height: 1.4;
   white-space: nowrap;
   opacity: 0;
@@ -141,7 +141,8 @@
   transition: all 0.2s;
   z-index: 1000;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
-  min-width: 280px;
+  min-width: 140px;
+  text-align: left;
 }
 
 .help-btn:hover .help-tooltip {
@@ -184,12 +185,34 @@
   border: 1px solid #ddd;
   border-radius: 4px;
   font-size: 14px;
+  box-sizing: border-box;
+  min-width: 0;
+  width: 100%;
 }
 
 .form-group input:focus {
   outline: none;
   border-color: #007bff;
   box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.25);
+}
+
+/* 에러 상태 입력 필드 */
+.form-group input.input-error {
+  border-color: #dc3545;
+  background-color: #fff5f5;
+}
+
+.form-group input.input-error:focus {
+  border-color: #dc3545;
+  box-shadow: 0 0 0 2px rgba(220, 53, 69, 0.25);
+}
+
+/* 인라인 에러 메시지 */
+.field-error-message {
+  margin-top: 4px;
+  font-size: 12px;
+  color: #dc3545;
+  font-weight: 500;
 }
 
 /* 성경책 입력 컨테이너 */
@@ -202,6 +225,9 @@
   display: flex;
   flex-direction: row;
   gap: 12px;
+  padding-top: 16px;
+  border-top: 1px solid #e0e0e0;
+  margin-top: 8px;
 }
 
 .verse-input {
@@ -232,8 +258,14 @@
   color: white;
 }
 
-.search-btn:hover {
+.search-btn:hover:not(:disabled) {
   background-color: #0056b3;
+}
+
+.search-btn:disabled {
+  background-color: #6c757d;
+  cursor: not-allowed;
+  opacity: 0.6;
 }
 
 .reset-btn {

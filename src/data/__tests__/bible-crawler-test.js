@@ -1,4 +1,4 @@
-import { fetchBibleVerses, buildCrawlUrl, isValidChapter, areValidVerses } from '../bible-crawler.js';
+import { crawlChapterVerses, getVersesFromArray, buildCrawlUrl, isValidChapter, areValidVerses } from '../bible-crawler.js';
 
 describe('bible-crawler', () => {
   
@@ -86,8 +86,8 @@ describe('bible-crawler', () => {
   });
   describe('내용 검사', () => {
     test('이사야 51장 10-13절', async () => {
-      const result = await fetchBibleVerses(23, 51, 10, 13);
-      
+      const allVerses = await crawlChapterVerses(23, 51);
+      const result = getVersesFromArray(allVerses, 10, 13);
       expect(result).toEqual([
         {id: '10', text: '바다를 말리신 이, 큰 깊음의 물을 말리신 이, 바다 깊은 곳을 길로 만드사 구속함을 받은 자들로 건너게 하신 이가 아니시냐'},
         {id: '11', text: '여호와께 구속함을 받은 자들이 돌아와서 노래하며 시온에 이르러 그들의 머리 위에 영영한 희락을 띠고 기쁨과 즐거움을 얻으리니 슬픔과 탄식이 도망하리로다'},
@@ -97,11 +97,47 @@ describe('bible-crawler', () => {
     });
 
     test('창세기 1장 1절', async () => {
-      const result = await fetchBibleVerses(1, 1, 1, 1);
+      const allVerses = await crawlChapterVerses(1, 1);
+      const result = getVersesFromArray(allVerses, 1, 1);
       
       expect(result).toEqual([
         {id: '1', text: '태초에 하나님이 천지를 창조하시니라'}
       ]);
+    });
+
+    test('크롤링 후 필터링 기능 테스트', async () => {
+      // 창세기 1장 전체 크롤링
+      const allVerses = await crawlChapterVerses(1, 1);
+      expect(allVerses.length).toBeGreaterThan(0);
+      
+      // 1-5절 필터링
+      const verses1to5 = getVersesFromArray(allVerses, 1, 5);
+      expect(verses1to5).toHaveLength(5);
+      expect(verses1to5[0].id).toBe('1');
+      expect(verses1to5[4].id).toBe('5');
+      
+      // 10절 단일 절 필터링
+      const verse10 = getVersesFromArray(allVerses, 10, 10);
+      expect(verse10).toHaveLength(1);
+      expect(verse10[0].id).toBe('10');
+      
+      // 범위 초과 체크
+      const emptyResult = getVersesFromArray(allVerses, 100, 200);
+      expect(emptyResult).toHaveLength(0);
+    });
+
+    test('getVersesFromArray 에러 처리', () => {
+      // 빈 배열
+      expect(getVersesFromArray([], 1, 5)).toEqual([]);
+      
+      // null 또는 undefined
+      expect(getVersesFromArray(null, 1, 5)).toEqual([]);
+      expect(getVersesFromArray(undefined, 1, 5)).toEqual([]);
+      
+      // 잘못된 범위
+      const mockData = [{id: '1', text: '절 1'}, {id: '2', text: '절 2'}];
+      expect(getVersesFromArray(mockData, 0, 1)).toEqual([{id: '1', text: '절 1'}]); // start가 1로 보정
+      expect(getVersesFromArray(mockData, 1, 10)).toEqual(mockData); // end가 최대값으로 보정
     });
   });
 });
