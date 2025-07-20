@@ -67,13 +67,10 @@
       "category": "public.app-category.reference"
     },
     "win": {
-      "target": "squirrel",
-      "publisherName": "Kim Yoochan"
+      "target": "squirrel"
     },
     "squirrelWindows": {
-      "name": "카피블",
-      "description": "성경구절을 자동으로 복사해주는 프로그램",
-      "authors": "Yoochan Kim",
+      "name": "copible",
       "loadingGif": false,
       "msi": false
     },
