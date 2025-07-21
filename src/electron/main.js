@@ -1,8 +1,95 @@
-const { app, BrowserWindow, Menu, globalShortcut } = require('electron');
+const { app, BrowserWindow, Menu, globalShortcut, shell, dialog } = require('electron');
 const { autoUpdater } = require('electron-updater');
 const path = require('path');
 
+
+
 let mainWindow;
+let isCheckingForUpdate = false; // 업데이트 체크 중인지 확인
+
+// Squirrel 이벤트 처리 (Windows)
+if (process.platform === 'win32') {
+  if (require('electron-squirrel-startup')) {
+    app.quit();
+  }
+}
+
+// Squirrel Windows 설치/업데이트 처리
+if (process.platform === 'win32') {
+  const handleSquirrelEvent = () => {
+    if (process.argv.length === 1) {
+      return false;
+    }
+
+    const ChildProcess = require('child_process');
+    const appFolder = path.resolve(process.execPath, '..');
+    const rootAtomFolder = path.resolve(appFolder, '..');
+    const updateDotExe = path.resolve(path.join(rootAtomFolder, 'Update.exe'));
+    const exeName = path.basename(process.execPath);
+
+    const spawn = function(command, args) {
+      let spawnedProcess;
+      try {
+        spawnedProcess = ChildProcess.spawn(command, args, {detached: true});
+      } catch (error) {
+        console.log('Spawn error:', error);
+      }
+      return spawnedProcess;
+    };
+
+    const spawnUpdate = function(args) {
+      return spawn(updateDotExe, args);
+    };
+
+    const squirrelEvent = process.argv[1];
+    console.log('Squirrel event:', squirrelEvent);
+
+    switch (squirrelEvent) {
+      case '--squirrel-install':
+      case '--squirrel-updated':
+        // 시작 메뉴와 바탕화면에 바로가기 생성
+        spawnUpdate(['--createShortcut', exeName]);
+        setTimeout(() => {
+          app.quit();
+        }, 500);
+        return true;
+
+      case '--squirrel-uninstall':
+        // 바로가기 제거
+        spawnUpdate(['--removeShortcut', exeName]);
+        setTimeout(() => {
+          app.quit();
+        }, 500);
+        return true;
+
+      case '--squirrel-obsolete':
+        app.quit();
+        return true;
+    }
+    return false;
+  };
+
+  if (handleSquirrelEvent()) {
+    // Squirrel 이벤트가 처리되었으므로 윈도우 생성 없이 앱 종료
+    return;
+  }
+}
+
+// 수동 업데이트 체크 함수
+function manualUpdateCheck() {
+  if (isCheckingForUpdate) {
+    dialog.showMessageBox(mainWindow, {
+      type: 'info',
+      title: '업데이트',
+      message: '이미 업데이트를 확인하고 있습니다.',
+      buttons: ['확인']
+    });
+    return;
+  }
+  
+  isCheckingForUpdate = true;
+  autoUpdater.checkForUpdates();
+}
 
 function createWindow() {
   mainWindow = new BrowserWindow({
@@ -59,6 +146,14 @@ function createWindow() {
           }
         },
         { type: 'separator' },
+        // Windows에서만 업데이트 메뉴 표시
+        ...(process.platform === 'win32' ? [{
+          label: '업데이트',
+          click: () => {
+            // 수동 업데이트 체크
+            manualUpdateCheck();
+          }
+        }, { type: 'separator' }] : []),
         {
           label: '종료',
           accelerator: process.platform === 'darwin' ? 'Cmd+Q' : 'Ctrl+Q',
@@ -118,17 +213,12 @@ function createWindow() {
 app.whenReady().then(() => {
   createWindow();
 
-  // 자동 업데이트 설정 (프로덕션에서만)
-  if (!process.env.NODE_ENV || process.env.NODE_ENV === 'production') {
-    // 앱 시작 5초 후 업데이트 체크
+  // 자동 업데이트 설정 (Windows 프로덕션에서만)
+  if (process.platform === 'win32' && (!process.env.NODE_ENV || process.env.NODE_ENV === 'production')) {
+    // 앱 시작 5초 후 업데이트 체크 (백그라운드, UI 표시 안함)
     setTimeout(() => {
-      autoUpdater.checkForUpdatesAndNotify();
+      autoUpdater.checkForUpdates();
     }, 5000);
-    
-    // 24시간마다 업데이트 체크
-    setInterval(() => {
-      autoUpdater.checkForUpdatesAndNotify();
-    }, 24 * 60 * 60 * 1000);
   }
 
   // 전역 단축키 등록
@@ -170,14 +260,56 @@ autoUpdater.on('checking-for-update', () => {
 
 autoUpdater.on('update-available', (info) => {
   console.log('업데이트가 사용 가능합니다.');
+  
+  // 수동 체크인 경우 사용자에게 확인
+  if (isCheckingForUpdate) {
+    isCheckingForUpdate = false;
+    
+    const response = dialog.showMessageBoxSync(mainWindow, {
+      type: 'question',
+      title: '업데이트 사용 가능',
+      message: `새로운 버전이 있습니다. (v${info.version})\n\n업데이트를 다운로드하시겠습니다?`,
+      buttons: ['예', '아니오'],
+      defaultId: 0
+    });
+    
+    if (response === 0) {
+      // 예 선택 시 다운로드 시작
+      autoUpdater.downloadUpdate();
+    }
+  }
 });
 
 autoUpdater.on('update-not-available', (info) => {
   console.log('최신 버전입니다.');
+  
+  // 수동 체크인 경우 사용자에게 알림
+  if (isCheckingForUpdate) {
+    isCheckingForUpdate = false;
+    
+    dialog.showMessageBox(mainWindow, {
+      type: 'info',
+      title: '업데이트',
+      message: '현재 최신 버전을 사용하고 있습니다.',
+      buttons: ['확인']
+    });
+  }
 });
 
 autoUpdater.on('error', (err) => {
   console.log('자동 업데이트 오류: ', err);
+  
+  // 수동 체크인 경우 오류 메시지 표시
+  if (isCheckingForUpdate) {
+    isCheckingForUpdate = false;
+    
+    dialog.showMessageBox(mainWindow, {
+      type: 'error',
+      title: '업데이트 오류',
+      message: '업데이트 확인 중 오류가 발생했습니다.\n\n네트워크 연결을 확인해주세요.',
+      buttons: ['확인']
+    });
+  }
 });
 
 autoUpdater.on('download-progress', (progressObj) => {
@@ -189,5 +321,6 @@ autoUpdater.on('download-progress', (progressObj) => {
 
 autoUpdater.on('update-downloaded', (info) => {
   console.log('업데이트 다운로드 완료');
-  // 앱 재시작 시 자동으로 업데이트됩니다.
+  // 업데이트 완료 시 즉시 재시작
+  autoUpdater.quitAndInstall();
 });

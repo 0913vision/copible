@@ -1,6 +1,6 @@
 {
   "name": "copy-bible-app",
-  "version": "1.2.2",
+  "version": "1.3.0",
   "description": "성경구절을 자동으로 복사해주는 프로그램",
   "main": "./src/electron/main.js",
   "scripts": {
@@ -38,6 +38,7 @@
     "webpack-dev-server": "^5.2.2"
   },
   "dependencies": {
+    "electron-squirrel-startup": "^1.0.1",
     "electron-updater": "^6.3.9",
     "es-hangul": "^2.3.3",
     "react": "^19.1.0",
@@ -67,12 +68,20 @@
       "category": "public.app-category.reference"
     },
     "win": {
-      "target": "squirrel"
+      "target": [
+        {
+          "target": "squirrel",
+          "arch": [
+            "x64"
+          ]
+        }
+      ]
     },
     "squirrelWindows": {
       "name": "copible",
       "loadingGif": false,
-      "msi": false
+      "msi": false,
+      "remoteReleases": false
     },
     "publish": {
       "provider": "github",
