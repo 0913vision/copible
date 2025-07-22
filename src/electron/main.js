@@ -217,7 +217,7 @@ app.whenReady().then(() => {
 if (process.platform === 'win32' && (!process.env.NODE_ENV || process.env.NODE_ENV === 'production')) {
   // 업데이트 설정을 직접 지정
   autoUpdater.setFeedURL({
-  provider: 'github',
+    provider: 'github',
     owner: '0913vision',
     repo: 'copible'
   });

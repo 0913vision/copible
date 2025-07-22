@@ -39,7 +39,7 @@
   },
   "dependencies": {
     "electron-squirrel-startup": "^1.0.1",
-    "electron-updater": "^6.3.9",
+    "electron-updater": "^6.6.2",
     "es-hangul": "^2.3.3",
     "react": "^19.1.0",
     "react-dom": "^19.1.0"
