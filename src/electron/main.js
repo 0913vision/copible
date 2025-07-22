@@ -1,9 +1,165 @@
-const { app, BrowserWindow, Menu, globalShortcut, shell, dialog } = require('electron');
+const { app, BrowserWindow, Menu, globalShortcut, shell, dialog, ipcMain } = require('electron');
 const { autoUpdater } = require('electron-updater');
 const path = require('path');
 
 let mainWindow;
 let isCheckingForUpdate = false; // 업데이트 체크 중인지 확인
+let downloadProgressWindow = null; // 다운로드 진행상황 창
+let isDownloading = false; // 다운로드 중인지 확인
+
+// 다운로드 진행상황 창 생성
+function createDownloadProgressWindow() {
+  if (downloadProgressWindow) {
+    downloadProgressWindow.focus();
+    return;
+  }
+
+  downloadProgressWindow = new BrowserWindow({
+    width: 400,
+    height: 200,
+    parent: mainWindow,
+    modal: true,
+    show: false,
+    resizable: false,
+    maximizable: false,
+    minimizable: false,
+    webPreferences: {
+      nodeIntegration: true,
+      contextIsolation: false
+    }
+  });
+
+  const progressHTML = `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <meta charset="UTF-8">
+      <title>업데이트 다운로드</title>
+      <style>
+        body {
+          font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+          margin: 0;
+          padding: 30px;
+          background: #f5f5f5;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          height: 100vh;
+          box-sizing: border-box;
+        }
+        .container {
+          text-align: center;
+          width: 100%;
+        }
+        h2 {
+          color: #333;
+          margin-bottom: 20px;
+          font-size: 16px;
+        }
+        .progress-container {
+          width: 100%;
+          background-color: #e0e0e0;
+          border-radius: 10px;
+          margin: 20px 0;
+          height: 20px;
+        }
+        .progress-bar {
+          width: 0%;
+          height: 100%;
+          background: linear-gradient(45deg, #4CAF50, #45a049);
+          border-radius: 10px;
+          transition: width 0.3s ease;
+        }
+        .progress-text {
+          margin-top: 10px;
+          color: #666;
+          font-size: 14px;
+        }
+        .speed-text {
+          color: #999;
+          font-size: 12px;
+          margin-top: 5px;
+        }
+        .cancel-btn {
+          margin-top: 20px;
+          padding: 8px 16px;
+          background-color: #f44336;
+          color: white;
+          border: none;
+          border-radius: 4px;
+          cursor: pointer;
+          font-size: 12px;
+        }
+        .cancel-btn:hover {
+          background-color: #d32f2f;
+        }
+      </style>
+    </head>
+    <body>
+      <div class="container">
+        <h2>업데이트 다운로드 중...</h2>
+        <div class="progress-container">
+          <div class="progress-bar" id="progressBar"></div>
+        </div>
+        <div class="progress-text" id="progressText">준비 중...</div>
+        <div class="speed-text" id="speedText"></div>
+        <button class="cancel-btn" onclick="cancelDownload()">취소</button>
+      </div>
+      
+      <script>
+        const { ipcRenderer } = require('electron');
+        
+        // 진행상황 업데이트 수신
+        ipcRenderer.on('download-progress', (event, progress) => {
+          const progressBar = document.getElementById('progressBar');
+          const progressText = document.getElementById('progressText');
+          const speedText = document.getElementById('speedText');
+          
+          progressBar.style.width = progress.percent + '%';
+          progressText.textContent = progress.percent.toFixed(1) + '% (' + 
+            formatBytes(progress.transferred) + ' / ' + formatBytes(progress.total) + ')';
+          speedText.textContent = '다운로드 속도: ' + formatBytes(progress.bytesPerSecond) + '/s';
+        });
+        
+        // 다운로드 완료 시 창 닫기
+        ipcRenderer.on('download-complete', () => {
+          window.close();
+        });
+        
+        // 다운로드 취소 함수
+        function cancelDownload() {
+          ipcRenderer.send('cancel-download');
+        }
+        
+        // 바이트를 읽기 쉬운 형태로 변환
+        function formatBytes(bytes) {
+          if (bytes === 0) return '0 B';
+          const k = 1024;
+          const sizes = ['B', 'KB', 'MB', 'GB'];
+          const i = Math.floor(Math.log(bytes) / Math.log(k));
+          return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
+        }
+      </script>
+    </body>
+    </html>
+  `;
+
+  downloadProgressWindow.loadURL('data:text/html;charset=utf-8,' + encodeURIComponent(progressHTML));
+
+  downloadProgressWindow.once('ready-to-show', () => {
+    downloadProgressWindow.show();
+  });
+
+  downloadProgressWindow.on('closed', () => {
+    if (isDownloading) {
+      // 창이 닫히면 다운로드도 중단
+      isDownloading = false;
+      console.log('다운로드가 취소되었습니다.');
+    }
+    downloadProgressWindow = null;
+  });
+}
 
 // 수동 업데이트 체크 함수
 function manualUpdateCheck() {
@@ -140,6 +296,21 @@ function createWindow() {
   });
 }
 
+// IPC 이벤트 리스너 설정
+ipcMain.on('cancel-download', () => {
+  if (downloadProgressWindow) {
+    isDownloading = false;
+    downloadProgressWindow.close();
+    
+    dialog.showMessageBox(mainWindow, {
+      type: 'info',
+      title: '다운로드 취소',
+      message: '다운로드가 취소되었습니다.',
+      buttons: ['확인']
+    });
+  }
+});
+
 app.whenReady().then(() => {
   createWindow();
 
@@ -155,7 +326,7 @@ app.whenReady().then(() => {
     // 앱 시작 5초 후 업데이트 체크 (백그라운드, UI 표시 안함)
     setTimeout(() => {
       autoUpdater.checkForUpdates();
-    }, 5000);
+    }, 1000);
   }
 
   // 전역 단축키 등록
@@ -212,6 +383,8 @@ autoUpdater.on('update-available', (info) => {
     
     if (response === 0) {
       // 예 선택 시 다운로드 시작
+      isDownloading = true;
+      createDownloadProgressWindow();
       autoUpdater.downloadUpdate();
     }
   }
@@ -253,6 +426,15 @@ autoUpdater.on('error', (err) => {
 });
 
 autoUpdater.on('download-progress', (progressObj) => {
+  if (downloadProgressWindow && isDownloading) {
+    downloadProgressWindow.webContents.send('download-progress', {
+      percent: Math.round(progressObj.percent * 100) / 100,
+      transferred: progressObj.transferred,
+      total: progressObj.total,
+      bytesPerSecond: progressObj.bytesPerSecond
+    });
+  }
+  
   let log_message = "다운로드 속도: " + progressObj.bytesPerSecond;
   log_message = log_message + ' - 다운로드됨 ' + progressObj.percent + '%';
   log_message = log_message + ' (' + progressObj.transferred + "/" + progressObj.total + ')';
@@ -261,6 +443,13 @@ autoUpdater.on('download-progress', (progressObj) => {
 
 autoUpdater.on('update-downloaded', (info) => {
   console.log('업데이트 다운로드 완료');
+  
+  isDownloading = false;
+  
+  // 다운로드 창 닫기
+  if (downloadProgressWindow) {
+    downloadProgressWindow.webContents.send('download-complete');
+  }
   
   // 사용자에게 업데이트 설치 확인
   const response = dialog.showMessageBoxSync(mainWindow, {
