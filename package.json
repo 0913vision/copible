@@ -53,7 +53,8 @@
     "files": [
       "src/electron/**/*",
       "build/**/*",
-      "node_modules/**/*"
+      "node_modules/**/*",
+      "app-update.yml"
     ],
     "mac": {
       "target": [
