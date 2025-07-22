@@ -67,6 +67,7 @@ const SearchPanel = ({
             <strong>단축키</strong><br/>
             • Cmd/Ctrl + F: 검색<br/>
             • Cmd/Ctrl + R: 성경책 필드로 포커스<br/>
+            • Cmd/Ctrl + S: 성경 전체 저장<br/>
             • Cmd/Ctrl + Q: 앱 종료<br/><br/>
             
             <strong>네비게이션</strong><br/>
@@ -81,7 +82,6 @@ const SearchPanel = ({
             
             <strong>전체 저장</strong><br/>
             • 검색 결과 우상단 "전체 저장" 버튼<br/>
-            • parseBible.txt 파일로 다운로드
           </div>
         </button>
       </div>
