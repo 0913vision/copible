@@ -1,6 +1,6 @@
 {
   "name": "copy-bible-app",
-  "version": "1.3.8",
+  "version": "1.3.9",
   "description": "성경구절을 자동으로 복사해주는 프로그램",
   "main": "./src/electron/main.js",
   "scripts": {
