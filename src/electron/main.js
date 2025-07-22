@@ -214,12 +214,19 @@ app.whenReady().then(() => {
   createWindow();
 
   // 자동 업데이트 설정 (Windows 프로덕션에서만)
-  if (process.platform === 'win32' && (!process.env.NODE_ENV || process.env.NODE_ENV === 'production')) {
-    // 앱 시작 5초 후 업데이트 체크 (백그라운드, UI 표시 안함)
-    setTimeout(() => {
-      autoUpdater.checkForUpdates();
-    }, 5000);
-  }
+if (process.platform === 'win32' && (!process.env.NODE_ENV || process.env.NODE_ENV === 'production')) {
+  // 업데이트 설정을 직접 지정
+  autoUpdater.setFeedURL({
+  provider: 'github',
+    owner: '0913vision',
+    repo: 'copible'
+  });
+  
+  // 앱 시작 5초 후 업데이트 체크 (백그라운드, UI 표시 안함)
+  setTimeout(() => {
+    autoUpdater.checkForUpdates();
+  }, 5000);
+}
 
   // 전역 단축키 등록
   const quitAccelerator = process.platform === 'darwin' ? 'Command+Q' : 'Control+Q';
