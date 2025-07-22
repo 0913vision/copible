@@ -2,78 +2,8 @@ const { app, BrowserWindow, Menu, globalShortcut, shell, dialog } = require('ele
 const { autoUpdater } = require('electron-updater');
 const path = require('path');
 
-
-
 let mainWindow;
 let isCheckingForUpdate = false; // 업데이트 체크 중인지 확인
-
-// Squirrel 이벤트 처리 (Windows)
-if (process.platform === 'win32') {
-  if (require('electron-squirrel-startup')) {
-    app.quit();
-  }
-}
-
-// Squirrel Windows 설치/업데이트 처리
-if (process.platform === 'win32') {
-  const handleSquirrelEvent = () => {
-    if (process.argv.length === 1) {
-      return false;
-    }
-
-    const ChildProcess = require('child_process');
-    const appFolder = path.resolve(process.execPath, '..');
-    const rootAtomFolder = path.resolve(appFolder, '..');
-    const updateDotExe = path.resolve(path.join(rootAtomFolder, 'Update.exe'));
-    const exeName = path.basename(process.execPath);
-
-    const spawn = function(command, args) {
-      let spawnedProcess;
-      try {
-        spawnedProcess = ChildProcess.spawn(command, args, {detached: true});
-      } catch (error) {
-        console.log('Spawn error:', error);
-      }
-      return spawnedProcess;
-    };
-
-    const spawnUpdate = function(args) {
-      return spawn(updateDotExe, args);
-    };
-
-    const squirrelEvent = process.argv[1];
-    console.log('Squirrel event:', squirrelEvent);
-
-    switch (squirrelEvent) {
-      case '--squirrel-install':
-      case '--squirrel-updated':
-        // 시작 메뉴와 바탕화면에 바로가기 생성
-        spawnUpdate(['--createShortcut', exeName]);
-        setTimeout(() => {
-          app.quit();
-        }, 500);
-        return true;
-
-      case '--squirrel-uninstall':
-        // 바로가기 제거
-        spawnUpdate(['--removeShortcut', exeName]);
-        setTimeout(() => {
-          app.quit();
-        }, 500);
-        return true;
-
-      case '--squirrel-obsolete':
-        app.quit();
-        return true;
-    }
-    return false;
-  };
-
-  if (handleSquirrelEvent()) {
-    // Squirrel 이벤트가 처리되었으므로 윈도우 생성 없이 앱 종료
-    return;
-  }
-}
 
 // 수동 업데이트 체크 함수
 function manualUpdateCheck() {
@@ -214,19 +144,19 @@ app.whenReady().then(() => {
   createWindow();
 
   // 자동 업데이트 설정 (Windows 프로덕션에서만)
-if (process.platform === 'win32' && (!process.env.NODE_ENV || process.env.NODE_ENV === 'production')) {
-  // 업데이트 설정을 직접 지정
-  autoUpdater.setFeedURL({
-    provider: 'github',
-    owner: '0913vision',
-    repo: 'copible'
-  });
-  
-  // 앱 시작 5초 후 업데이트 체크 (백그라운드, UI 표시 안함)
-  setTimeout(() => {
-    autoUpdater.checkForUpdates();
-  }, 5000);
-}
+  if (process.platform === 'win32' && (!process.env.NODE_ENV || process.env.NODE_ENV === 'production')) {
+    // NSIS 기반 자동 업데이트 설정
+    autoUpdater.setFeedURL({
+      provider: 'github',
+      owner: '0913vision',
+      repo: 'copible'
+    });
+    
+    // 앱 시작 5초 후 업데이트 체크 (백그라운드, UI 표시 안함)
+    setTimeout(() => {
+      autoUpdater.checkForUpdates();
+    }, 5000);
+  }
 
   // 전역 단축키 등록
   const quitAccelerator = process.platform === 'darwin' ? 'Command+Q' : 'Control+Q';
@@ -331,6 +261,18 @@ autoUpdater.on('download-progress', (progressObj) => {
 
 autoUpdater.on('update-downloaded', (info) => {
   console.log('업데이트 다운로드 완료');
-  // 업데이트 완료 시 즉시 재시작
-  autoUpdater.quitAndInstall();
+  
+  // 사용자에게 업데이트 설치 확인
+  const response = dialog.showMessageBoxSync(mainWindow, {
+    type: 'question',
+    title: '업데이트 준비 완료',
+    message: `새로운 버전(v${info.version})을 다운로드했습니다.\n\n지금 업데이트를 설치하시겠습니까? 앱이 재시작됩니다.`,
+    buttons: ['예, 지금 설치', '나중에'],
+    defaultId: 0
+  });
+  
+  if (response === 0) {
+    // NSIS 인스톨러를 사용하여 업데이트 설치 및 재시작
+    autoUpdater.quitAndInstall(true, true);
+  }
 });

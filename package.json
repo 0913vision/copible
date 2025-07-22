@@ -38,7 +38,6 @@
     "webpack-dev-server": "^5.2.2"
   },
   "dependencies": {
-    "electron-squirrel-startup": "^1.0.1",
     "electron-updater": "^6.6.2",
     "es-hangul": "^2.3.3",
     "react": "^19.1.0",
@@ -70,18 +69,22 @@
     "win": {
       "target": [
         {
-          "target": "squirrel",
+          "target": "nsis",
           "arch": [
             "x64"
           ]
         }
       ]
     },
-    "squirrelWindows": {
-      "name": "copible",
-      "loadingGif": null,
-      "msi": false,
-      "remoteReleases": false
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "카피블",
+      "uninstallDisplayName": "카피블",
+      "runAfterFinish": true,
+      "artifactName": "${productName}-Setup-${version}.${ext}"
     },
     "publish": {
       "provider": "github",
