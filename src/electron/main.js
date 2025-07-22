@@ -231,6 +231,13 @@ function createWindow() {
             mainWindow.webContents.send('shortcut-reset');
           }
         },
+        {
+          label: '전체 저장',
+          accelerator: 'CmdOrCtrl+Shift+S',
+          click: () => {
+            mainWindow.webContents.send('shortcut-save-all');
+          }
+        },
         { type: 'separator' },
         // Windows에서만 업데이트 메뉴 표시
         ...(process.platform === 'win32' ? [{
@@ -250,6 +257,18 @@ function createWindow() {
       ]
     },
     {
+      label: '편집',
+      submenu: [
+        { label: '되돌리기', accelerator: 'CmdOrCtrl+Z', role: 'undo' },
+        { label: '다시 실행', accelerator: 'Shift+CmdOrCtrl+Z', role: 'redo' },
+        { type: 'separator' },
+        { label: '잘라내기', accelerator: 'CmdOrCtrl+X', role: 'cut' },
+        { label: '복사', accelerator: 'CmdOrCtrl+C', role: 'copy' },
+        { label: '붙여넣기', accelerator: 'CmdOrCtrl+V', role: 'paste' },
+        { label: '전체 선택', accelerator: 'CmdOrCtrl+A', role: 'selectAll' }
+      ]
+    },
+    {
       label: '개발',
       submenu: [
         {
@@ -266,24 +285,36 @@ function createWindow() {
   const menu = Menu.buildFromTemplate(menuTemplate);
   Menu.setApplicationMenu(menu);
 
-  // 기본 단축키 동작 방지
+  // 기본 단축키 동작 방지 (특정 단축키만)
   mainWindow.webContents.on('before-input-event', (event, input) => {
     // Mac에서는 meta(코맨드)키, Windows/Linux에서는 control키
     const isModifierPressed = process.platform === 'darwin' ? input.meta : input.control;
     
+    // 사용자 정의 단축키만 처리
     if (isModifierPressed && input.key.toLowerCase() === 'f') {
       event.preventDefault();
       mainWindow.webContents.send('shortcut-search');
+      return;
     }
     if (isModifierPressed && input.key.toLowerCase() === 'r') {
       event.preventDefault();
       mainWindow.webContents.send('shortcut-reset');
+      return;
+    }
+    // Ctrl+Shift+S (Cmd+Shift+S) 전체 저장 단축키
+    if (isModifierPressed && input.shift && input.key.toLowerCase() === 's') {
+      event.preventDefault();
+      mainWindow.webContents.send('shortcut-save-all');
+      return;
     }
     // Cmd+Q (Ctrl+Q) 종료 단축키
     if (isModifierPressed && input.key.toLowerCase() === 'q') {
       event.preventDefault();
       app.quit();
+      return;
     }
+    
+    // 다른 모든 단축키는 기본 동작 허용 (Ctrl+A, Ctrl+C, Ctrl+V, Ctrl+Z 등)
   });
 
   mainWindow.on('closed', () => {
@@ -308,6 +339,31 @@ ipcMain.on('cancel-download', () => {
       message: '다운로드가 취소되었습니다.',
       buttons: ['확인']
     });
+  }
+});
+
+// 파일 저장 IPC 핸들러
+ipcMain.handle('save-file', async (event, { defaultFileName, content }) => {
+  try {
+    const result = await dialog.showSaveDialog(mainWindow, {
+      title: '파일 저장',
+      defaultPath: defaultFileName,
+      filters: [
+        { name: 'Text Files', extensions: ['txt'] },
+        { name: 'All Files', extensions: ['*'] }
+      ]
+    });
+    
+    if (result.canceled) {
+      return { canceled: true };
+    }
+    
+    const fs = require('fs');
+    fs.writeFileSync(result.filePath, content, 'utf8');
+    
+    return { success: true, filePath: result.filePath };
+  } catch (error) {
+    return { success: false, error: error.message };
   }
 });
 

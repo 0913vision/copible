@@ -215,13 +215,22 @@ const App = () => {
           }
         };
         
+        // Ctrl+Shift+S: 전체 저장
+        const handleShortcutSaveAll = () => {
+          // ResultsPanel에 이벤트 발송
+          const event = new CustomEvent('save-all-shortcut');
+          document.dispatchEvent(event);
+        };
+        
         ipcRenderer.on('shortcut-search', handleShortcutSearch);
         ipcRenderer.on('shortcut-reset', handleShortcutReset);
+        ipcRenderer.on('shortcut-save-all', handleShortcutSaveAll);
         
         // 컴포넌트 언마운트 시 리스너 제거
         return () => {
           ipcRenderer.removeListener('shortcut-search', handleShortcutSearch);
           ipcRenderer.removeListener('shortcut-reset', handleShortcutReset);
+          ipcRenderer.removeListener('shortcut-save-all', handleShortcutSaveAll);
         };
       } catch (error) {
         // Electron이 아닌 환경에서는 무시
