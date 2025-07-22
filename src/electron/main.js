@@ -15,14 +15,15 @@ function createDownloadProgressWindow() {
   }
 
   downloadProgressWindow = new BrowserWindow({
-    width: 400,
-    height: 200,
+    width: 450,
+    height: 250,
     parent: mainWindow,
     modal: true,
     show: false,
     resizable: false,
     maximizable: false,
     minimizable: false,
+    frame: false,  // 타이틀바 제거
     webPreferences: {
       nodeIntegration: true,
       contextIsolation: false
@@ -39,7 +40,7 @@ function createDownloadProgressWindow() {
         body {
           font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
           margin: 0;
-          padding: 30px;
+          padding: 20px;
           background: #f5f5f5;
           display: flex;
           flex-direction: column;
@@ -47,10 +48,33 @@ function createDownloadProgressWindow() {
           justify-content: center;
           height: 100vh;
           box-sizing: border-box;
+          border: 1px solid #ddd;
+          border-radius: 8px;
         }
         .container {
           text-align: center;
           width: 100%;
+          max-width: 380px;
+        }
+        .close-btn {
+          position: absolute;
+          top: 10px;
+          right: 15px;
+          background: none;
+          border: none;
+          font-size: 20px;
+          color: #999;
+          cursor: pointer;
+          width: 30px;
+          height: 30px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+        }
+        .close-btn:hover {
+          color: #666;
+          background-color: #e0e0e0;
+          border-radius: 50%;
         }
         h2 {
           color: #333;
@@ -97,6 +121,7 @@ function createDownloadProgressWindow() {
       </style>
     </head>
     <body>
+      <button class="close-btn" onclick="cancelDownload()" title="닫기">×</button>
       <div class="container">
         <h2>업데이트 다운로드 중...</h2>
         <div class="progress-container">
@@ -268,7 +293,7 @@ function createWindow() {
         { label: '전체 선택', accelerator: 'CmdOrCtrl+A', role: 'selectAll' }
       ]
     },
-    {
+    ...(process.env.NODE_ENV === 'development' ? [{
       label: '개발',
       submenu: [
         {
@@ -277,9 +302,34 @@ function createWindow() {
           click: () => {
             mainWindow.webContents.toggleDevTools();
           }
+        },
+        {
+          label: '다운로드 창 테스트',
+          click: () => {
+            createDownloadProgressWindow();
+            
+            // 테스트용 가짜 진행상황 시뮤레이션
+            let progress = 0;
+            const interval = setInterval(() => {
+              if (downloadProgressWindow && progress <= 100) {
+                downloadProgressWindow.webContents.send('download-progress', {
+                  percent: progress,
+                  transferred: progress * 1024 * 1024,
+                  total: 100 * 1024 * 1024,
+                  bytesPerSecond: 512 * 1024
+                });
+                progress += 5;
+              } else {
+                clearInterval(interval);
+                if (downloadProgressWindow) {
+                  downloadProgressWindow.webContents.send('download-complete');
+                }
+              }
+            }, 200);
+          }
         }
       ]
-    }
+    }] : []),
   ];
 
   const menu = Menu.buildFromTemplate(menuTemplate);
