@@ -79,7 +79,7 @@
     },
     "squirrelWindows": {
       "name": "copible",
-      "loadingGif": false,
+      "loadingGif": null,
       "msi": false,
       "remoteReleases": false
     },

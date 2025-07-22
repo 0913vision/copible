@@ -298,6 +298,9 @@ autoUpdater.on('update-not-available', (info) => {
 
 autoUpdater.on('error', (err) => {
   console.log('자동 업데이트 오류: ', err);
+  console.log('오류 메시지:', err.message);
+  console.log('오류 스택:', err.stack);
+  console.log('전체 오류 객체:', JSON.stringify(err, Object.getOwnPropertyNames(err), 2));
   
   // 수동 체크인 경우 오류 메시지 표시
   if (isCheckingForUpdate) {
@@ -306,7 +309,7 @@ autoUpdater.on('error', (err) => {
     dialog.showMessageBox(mainWindow, {
       type: 'error',
       title: '업데이트 오류',
-      message: '업데이트 확인 중 오류가 발생했습니다.\n\n네트워크 연결을 확인해주세요.',
+      message: `업데이트 확인 중 오류가 발생했습니다.\n\n오류: ${err.message}\n\n네트워크 연결을 확인해주세요.`,
       buttons: ['확인']
     });
   }
