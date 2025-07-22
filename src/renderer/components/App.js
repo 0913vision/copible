@@ -215,7 +215,7 @@ const App = () => {
           }
         };
         
-        // Ctrl+Shift+S: 전체 저장
+        // Ctrl+S: 전체 저장
         const handleShortcutSaveAll = () => {
           // ResultsPanel에 이벤트 발송
           const event = new CustomEvent('save-all-shortcut');

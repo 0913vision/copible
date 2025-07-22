@@ -233,7 +233,7 @@ function createWindow() {
         },
         {
           label: '전체 저장',
-          accelerator: 'CmdOrCtrl+Shift+S',
+          accelerator: 'CmdOrCtrl+S',
           click: () => {
             mainWindow.webContents.send('shortcut-save-all');
           }
@@ -301,8 +301,8 @@ function createWindow() {
       mainWindow.webContents.send('shortcut-reset');
       return;
     }
-    // Ctrl+Shift+S (Cmd+Shift+S) 전체 저장 단축키
-    if (isModifierPressed && input.shift && input.key.toLowerCase() === 's') {
+    // Ctrl+S (Cmd+S) 전체 저장 단축키
+    if (isModifierPressed && input.key.toLowerCase() === 's') {
       event.preventDefault();
       mainWindow.webContents.send('shortcut-save-all');
       return;
