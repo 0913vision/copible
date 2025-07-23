@@ -1,5 +1,5 @@
 {
-  "name": "copy-bible-app",
+  "name": "copible",
   "version": "1.3.11",
   "description": "성경구절을 자동으로 복사해주는 프로그램",
   "main": "./src/electron/main.js",
