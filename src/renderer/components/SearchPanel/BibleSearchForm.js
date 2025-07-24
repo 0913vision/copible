@@ -88,7 +88,7 @@ const BibleSearchForm = ({
     try {
       // 해당 장의 모든 절을 크롤링하여 최대 절 수 계산
       const verses = await crawlChapterVerses(currentBook.id, chapterNum);
-      setMaxVerses(verses.length);
+      setMaxVerses(verses[verses.length - 1]?.id || 0);
       
       // 크롤링된 데이터를 App.js로 전달
       if (onChapterDataChange) {
@@ -407,7 +407,7 @@ const BibleSearchForm = ({
               }
             }}
             onFocus={onInputFocus}
-            placeholder={
+            placeholder={isCrawling ? "불러오는 중..." : 
               // 크롤링 완료 상태이고 시작절이 입력되었을 때
               maxVerses > 0 && startVerse && parseInt(startVerse) > 0 && parseInt(startVerse) <= maxVerses
                 ? `끝절 (${startVerse}~${maxVerses})`

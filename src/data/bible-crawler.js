@@ -31,13 +31,16 @@ export const getVersesFromArray = (versesArray, startVerse, endVerse) => {
   }
   
   const start = Math.max(1, startVerse);
-  const end = Math.min(versesArray.length, endVerse);
+  const end = Math.min(versesArray[versesArray.length-1].id, endVerse);
   
   if (start === end) {
     return versesArray.filter(verse => parseInt(verse.id, 10) === start);
   }
   
   return versesArray.filter(verse => {
+    if (verse.id === "18-19") {
+      console.log(parseInt(verse.id, 10))
+    }
     const verseNumber = parseInt(verse.id, 10);
     return verseNumber >= start && verseNumber <= end;
   });
