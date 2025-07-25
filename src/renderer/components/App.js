@@ -250,37 +250,34 @@ const App = () => {
     const handleKeyDown = (e) => {
       // focus된 verse가 있을 때만 처리
       if (focusedVerseIndex >= 0) {
-        // 방향키 처리
+        // Tab 키는 기본 동작 방지 (Alt(Cmd)+Tab 에서 오류 발생하지 않도록)
+        if (e.key === 'Tab') {
+          e.preventDefault();
+          return;
+        }
+        // 제외할 키들: Ctrl, Shift, Alt, Cmd, Option, Function, Esc, Home, Delete 등
+        const excludedKeys = [
+          'Control', 'Shift', 'Alt', 'Meta', 'Option', 
+          'Escape', 'Home', 'End', 'Delete', 'Backspace',
+          'F1', 'F2', 'F3', 'F4', 'F5', 'F6', 'F7', 'F8', 'F9', 'F10', 'F11', 'F12'
+        ];
+        // modifier 키가 눌렸거나 제외 키들이면 무시
+        if (e.ctrlKey || e.shiftKey || e.altKey || e.metaKey || excludedKeys.includes(e.key)) {
+          return;
+        }
+
+        const allowedPattern = /^[a-zA-Z0-9가-힣ㄱ-ㅎㅏ-ㅣ\t ]$|^[-=+\[\]\\.`~!@#$%^&*()_+{}|:"<>?]$/;
+
+        // 처리
         if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') {
           e.preventDefault();
           moveToPreviousVerse();
           return;
         }
-        if (e.key === 'ArrowRight' || e.key === 'ArrowDown') {
+        if (e.key === 'ArrowRight' || e.key === 'ArrowDown' || allowedPattern.test(e.key)) {
           e.preventDefault();
           moveToNextVerse();
           return;
-        }
-        
-        // 제외할 키들: Ctrl, Shift, Alt, Cmd, Option, Function, Esc, Home, Delete 등
-        const excludedKeys = [
-          'Control', 'Shift', 'Alt', 'Meta', 'Option', 
-          'Escape', 'Home', 'End', 'Delete', 'Backspace',
-          'F1', 'F2', 'F3', 'F4', 'F5', 'F6', 'F7', 'F8', 'F9', 'F10', 'F11', 'F12',
-          'ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown' // 방향키도 제외 (이미 위에서 처리됨)
-        ];
-        
-        // modifier 키가 눌렸거나 제외 키들이면 무시
-        if (e.ctrlKey || e.shiftKey || e.altKey || e.metaKey || excludedKeys.includes(e.key)) {
-          return;
-        }
-        
-        // 알파벳, 숫자, 탭, 스페이스, 일부 특수문자만 허용
-        const allowedPattern = /^[a-zA-Z0-9\t ]$|^[-=+\[\]\\.`~!@#$%^&*()_+{}|:"<>?]$/;
-        
-        if (allowedPattern.test(e.key)) {
-          e.preventDefault();
-          moveToNextVerse();
         }
       }
     };
