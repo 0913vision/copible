@@ -1,6 +1,6 @@
 {
   "name": "copible",
-  "version": "1.4.1",
+  "version": "1.4.2",
   "description": "성경구절을 자동으로 복사해주는 프로그램",
   "main": "./src/electron/main.js",
   "scripts": {
