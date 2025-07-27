@@ -78,6 +78,11 @@ const App = () => {
       return; // 검색 실패 시 포커스 해제하지 않음
     } else {
       // 주소 카드 생성
+      if (end > verses[verses.length - 1].id) {
+        setEndVerse(verses[verses.length - 1].id);
+        end = verses[verses.length - 1].id;
+      }
+      
       const addressCard = createAddressCard(book, chapterNum, start, end);
       
       // 주소 카드를 맨 앞에 추가

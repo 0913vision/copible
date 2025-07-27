@@ -38,9 +38,6 @@ export const getVersesFromArray = (versesArray, startVerse, endVerse) => {
   }
   
   return versesArray.filter(verse => {
-    if (verse.id === "18-19") {
-      console.log(parseInt(verse.id, 10))
-    }
     const verseNumber = parseInt(verse.id, 10);
     return verseNumber >= start && verseNumber <= end;
   });
@@ -65,7 +62,12 @@ export const getVersesByUrl = async (url) => {
     const parser = new DOMParser();
     const doc = parser.parseFromString(html, 'text/html');
     
-    const verseElements = doc.querySelectorAll('#tdBible1 > span');
+    let verseElements = doc.querySelectorAll('#tdBible1 > span');
+    
+    if (verseElements.length === 0) {
+      // 시편과 같이 span 태그가 f 안에 있는 경우를 재 파싱
+      verseElements = doc.querySelectorAll('#tdBible1 > f > span');
+    }
     
     if (verseElements.length === 0) {
       return null;
